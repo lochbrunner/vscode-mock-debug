@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 /*
- * activateMockDebug.ts containes the shared extension code that can be executed both in node.js and the browser.
+ * activateMockDebug.ts contains the shared extension code that can be executed both in node.js and the browser.
  */
 
 'use strict';
@@ -122,7 +122,7 @@ export function activateMockDebug(context: vscode.ExtensionContext, factory?: vs
 	// override VS Code's default implementation of the "inline values" feature"
 	context.subscriptions.push(vscode.languages.registerInlineValuesProvider('markdown', {
 
-		provideInlineValues(document: vscode.TextDocument, viewport: vscode.Range, context: vscode.InlineValueContext) : vscode.ProviderResult<vscode.InlineValue[]> {
+		provideInlineValues(document: vscode.TextDocument, viewport: vscode.Range, context: vscode.InlineValueContext): vscode.ProviderResult<vscode.InlineValue[]> {
 
 			const allValues: vscode.InlineValue[] = [];
 
