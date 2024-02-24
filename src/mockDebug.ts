@@ -69,6 +69,11 @@ export class MockDebugSession extends LoggingDebugSession {
 
 	private _addressesInHex = true;
 
+	sendEvent(event: DebugProtocol.Event): void {
+		console.info(`sendEvent ${JSON.stringify(event)}`);
+		super.sendEvent(event);
+	}
+
 	/**
 	 * Creates a new debug adapter that is used for one debug session.
 	 * We configure the default implementation of a debug adapter here.

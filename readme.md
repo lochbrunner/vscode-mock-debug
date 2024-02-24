@@ -32,3 +32,22 @@ You can now 'step through' the `readme.md` file, set and hit breakpoints, and ru
 * In the explorer view of the new window open the 'program' file `readme.md`
 * Set some breakpoints
 * From the editor's "Run and Debug" toolbar dropdown menu select "Debug File"
+
+## Nodejs Dependency
+
+vscode.debug.registerDebugAdapterDescriptorFactory
+vscode.debug.DebugAdapterDescriptorFactory
+vscode.DebugAdapterDescriptor
+vscode.DebugAdapterInlineImplementation -> MockDebugSession/LoggingDebugSession/DebugSession/ProtocolServer/ee.EventEmitter
+vscode.DebugAdapter
+vscode.Event
+
+## Good
+
+[Extension Host] sendEvent {"seq":0,"type":"event","event":"initialized"}
+[Extension Host] sendEvent {"seq":0,"type":"event","event":"stopped","body":{"reason":"entry","threadId":1}}
+
+## Bad
+
+[Extension Host] Firing {"seq":0,"type":"event","event":"initialized"}
+[Extension Host] Firing {"seq":0,"type":"event","event":"stopped","body":{"reason":"entry","threadId":1}}
