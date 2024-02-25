@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as ee from 'events';
+import { EventEmitter } from './eventEmitter';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { Response, Event } from './messages';
 
@@ -58,7 +58,7 @@ class Emitter<T> {
 		}
 	}
 
-	hasListener() : boolean {
+	hasListener(): boolean {
 		return !!this._listener;
 	}
 
@@ -78,7 +78,7 @@ interface VSCodeDebugAdapter extends Disposable0 {
 	handleMessage(message: DebugProtocol.ProtocolMessage): void;
 }
 
-export class ProtocolServer extends ee.EventEmitter implements VSCodeDebugAdapter {
+export class ProtocolServer extends EventEmitter implements VSCodeDebugAdapter {
 
 	private static TWO_CRLF = '\r\n\r\n';
 
@@ -158,7 +158,7 @@ export class ProtocolServer extends ee.EventEmitter implements VSCodeDebugAdapte
 		}
 	}
 
-	public sendRequest(command: string, args: any, timeout: number, cb: (response: DebugProtocol.Response) => void) : void {
+	public sendRequest(command: string, args: any, timeout: number, cb: (response: DebugProtocol.Response) => void): void {
 
 		const request: any = {
 			command: command

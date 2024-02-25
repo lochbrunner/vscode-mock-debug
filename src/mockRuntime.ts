@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 
 // import { logger } from '@vscode/debugadapter';
-import { EventEmitter } from 'events';
+import { EventEmitter } from './orig/eventEmitter';
 
 export interface FileAccessor {
 	isWindows: boolean;

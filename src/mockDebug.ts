@@ -10,18 +10,9 @@
  * The most important class of the Debug Adapter is the MockDebugSession which implements many DAP requests by talking to the MockRuntime.
  */
 
-// import {
-// 	Logger, logger,
-// 	LoggingDebugSession,
-// 	InitializedEvent, TerminatedEvent, StoppedEvent, BreakpointEvent, OutputEvent,
-// 	ProgressStartEvent, ProgressUpdateEvent, ProgressEndEvent, InvalidatedEvent,
-// 	Thread, StackFrame, Scope, Source, Handles, Breakpoint, MemoryEvent
-// } from '@vscode/debugadapter';
-import { Logger, logger, LogLevel } from './orig/logger';
-import { LoggingDebugSession } from './orig/loggingDebugSession';
 import {
 	StoppedEvent, BreakpointEvent, OutputEvent, ProgressStartEvent, ProgressUpdateEvent, ProgressEndEvent, InvalidatedEvent, Thread, StackFrame, Scope, Source,
-	Breakpoint, MemoryEvent
+	Breakpoint, MemoryEvent, DebugSession
 } from './orig/debugSession';
 import { Handles } from './orig/handles';
 
@@ -53,7 +44,7 @@ interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 interface IAttachRequestArguments extends ILaunchRequestArguments { }
 
 
-export class MockDebugSession extends LoggingDebugSession {
+export class MockDebugSession extends DebugSession {
 
 	// we don't support multiple threads, so we can use a hardcoded ID for the default thread
 	private static threadID = 1;
@@ -87,7 +78,7 @@ export class MockDebugSession extends LoggingDebugSession {
 	 * We configure the default implementation of a debug adapter here.
 	 */
 	public constructor(fileAccessor: FileAccessor) {
-		super("mock-debug.txt");
+		super();
 
 		// this debugger uses zero-based lines and columns
 		this.setDebuggerLinesStartAt1(false);
@@ -261,7 +252,6 @@ export class MockDebugSession extends LoggingDebugSession {
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments) {
 
 		// make sure to 'Stop' the buffered logging if 'trace' is not set
-		logger.setup(args.trace ? LogLevel.Verbose : LogLevel.Stop, false);
 
 		// wait 1 second until configuration has finished (and configurationDoneRequest has been called)
 		await this._configurationDone.wait(1000);
