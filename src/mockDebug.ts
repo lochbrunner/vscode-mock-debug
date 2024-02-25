@@ -10,13 +10,21 @@
  * The most important class of the Debug Adapter is the MockDebugSession which implements many DAP requests by talking to the MockRuntime.
  */
 
+// import {
+// 	Logger, logger,
+// 	LoggingDebugSession,
+// 	InitializedEvent, TerminatedEvent, StoppedEvent, BreakpointEvent, OutputEvent,
+// 	ProgressStartEvent, ProgressUpdateEvent, ProgressEndEvent, InvalidatedEvent,
+// 	Thread, StackFrame, Scope, Source, Handles, Breakpoint, MemoryEvent
+// } from '@vscode/debugadapter';
+import { Logger, logger, LogLevel } from './orig/logger';
+import { LoggingDebugSession } from './orig/loggingDebugSession';
 import {
-	Logger, logger,
-	LoggingDebugSession,
-	InitializedEvent, TerminatedEvent, StoppedEvent, BreakpointEvent, OutputEvent,
-	ProgressStartEvent, ProgressUpdateEvent, ProgressEndEvent, InvalidatedEvent,
-	Thread, StackFrame, Scope, Source, Handles, Breakpoint, MemoryEvent
-} from '@vscode/debugadapter';
+	StoppedEvent, BreakpointEvent, OutputEvent, ProgressStartEvent, ProgressUpdateEvent, ProgressEndEvent, InvalidatedEvent, Thread, StackFrame, Scope, Source,
+	Breakpoint, MemoryEvent
+} from './orig/debugSession';
+import { Handles } from './orig/handles';
+
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { basename } from 'path-browserify';
 import { MockRuntime, IRuntimeBreakpoint, FileAccessor, RuntimeVariable, timeout, IRuntimeVariableType } from './mockRuntime';
@@ -253,7 +261,7 @@ export class MockDebugSession extends LoggingDebugSession {
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments) {
 
 		// make sure to 'Stop' the buffered logging if 'trace' is not set
-		logger.setup(args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
+		logger.setup(args.trace ? LogLevel.Verbose : LogLevel.Stop, false);
 
 		// wait 1 second until configuration has finished (and configurationDoneRequest has been called)
 		await this._configurationDone.wait(1000);
