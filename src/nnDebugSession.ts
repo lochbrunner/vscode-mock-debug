@@ -42,12 +42,15 @@ export class NnMockDebugSession extends DebugProtocolAdapter {
     this.caret = 0;
   }
 
-  protected launchRequest(response: DebugProtocol.LaunchResponse, args: DebugProtocol.LaunchRequestArguments, request?: DebugProtocol.Request): void {
-    console.info('launchRequest triggered');
+  protected async launchRequest(response: DebugProtocol.LaunchResponse, args: DebugProtocol.LaunchRequestArguments, request?: DebugProtocol.Request): void {
+    // console.info('launchRequest triggered');
     // await this._configurationDone.wait(1000);
     // TODO: Wait for the configuration to be done
-    this.stopOn('entry');
+    await this._configurationDone.wait(1000);
     this.sendResponse(response);
+    setTimeout(() => {
+      this.stopOn('entry');
+    }, 1000);
   }
 
   protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments, request?: DebugProtocol.Request): void {

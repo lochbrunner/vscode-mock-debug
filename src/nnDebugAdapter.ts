@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { basename } from 'path-browserify';
 import { Handles, StoppedEvent, StackFrame, Source, ErrorDestination } from '@vscode/debugadapter';
 import { DebugProtocol } from '@vscode/debugprotocol';
+import { Subject } from 'await-notify';
 
 export class Message implements DebugProtocol.ProtocolMessage {
   seq: number;
@@ -178,6 +179,7 @@ export class DebugProtocolAdapter implements vscode.DebugAdapter {
   private _addressesInHex = true;
   private _valuesInHex = false;
   private _variableHandles = new Handles<'locals' | 'globals' | RuntimeVariable>();
+  protected _configurationDone = new Subject();
 
   constructor(obsolete_debuggerLinesAndColumnsStartAt1?: boolean) {
     const linesAndColumnsStartAt1 = typeof obsolete_debuggerLinesAndColumnsStartAt1 === 'boolean' ? obsolete_debuggerLinesAndColumnsStartAt1 : false;
@@ -205,13 +207,21 @@ export class DebugProtocolAdapter implements vscode.DebugAdapter {
         clb(response);
       }
     }
-
+    else {
+      console.error(`unknown message type ${msg.type}`);
+    }
   }
 
   private _send(typ: 'request' | 'response' | 'event', message: DebugProtocol.ProtocolMessage): void {
-
+    // if (message.type === 'undefined' || !message.type || message.type !== typ) {
+    //   console.error(`message type ${message.type} does not match argument ${typ}`);
+    // }
+    // if (message.type === 'event') {
+    //   console.warn(message);
+    // }
     message.type = typ;
-    console.info(`Firing ${JSON.stringify(message)}`);
+    console.info(`${message.type}: ${message['command'] || message['event']} ${message['request_seq'] || ''} ${message.seq}`);
+    message.type = typ;
     this._sendMessage.fire(message);
   }
 
@@ -268,7 +278,7 @@ export class DebugProtocolAdapter implements vscode.DebugAdapter {
     this.sendResponse(response);
   }
 
-  protected launchRequest(response: DebugProtocol.LaunchResponse, args: DebugProtocol.LaunchRequestArguments, request?: DebugProtocol.Request): void {
+  protected async launchRequest(response: DebugProtocol.LaunchResponse, args: DebugProtocol.LaunchRequestArguments, request?: DebugProtocol.Request): void {
     this.sendResponse(response);
   }
 
@@ -298,6 +308,7 @@ export class DebugProtocolAdapter implements vscode.DebugAdapter {
 
   protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments, request?: DebugProtocol.Request): void {
     this.sendResponse(response);
+    this._configurationDone.notify();
   }
 
   protected continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments, request?: DebugProtocol.Request): void {
@@ -496,13 +507,13 @@ export class DebugProtocolAdapter implements vscode.DebugAdapter {
       return;
     }
     // This default debug adapter does not support conditional breakpoints.
-    response.body.supportsConditionalBreakpoints = false;
+    response.body.supportsConditionalBreakpoints = true;
 
     // This default debug adapter does not support hit conditional breakpoints.
-    response.body.supportsHitConditionalBreakpoints = false;
+    response.body.supportsHitConditionalBreakpoints = true;
 
     // This default debug adapter does not support function breakpoints.
-    response.body.supportsFunctionBreakpoints = false;
+    response.body.supportsFunctionBreakpoints = true;
 
     // This default debug adapter implements the 'configurationDone' request.
     response.body.supportsConfigurationDoneRequest = true;
@@ -511,7 +522,7 @@ export class DebugProtocolAdapter implements vscode.DebugAdapter {
     response.body.supportsEvaluateForHovers = false;
 
     // This default debug adapter does not support the 'stepBack' request.
-    response.body.supportsStepBack = false;
+    response.body.supportsStepBack = true;
 
     // This default debug adapter does not support the 'setVariable' request.
     response.body.supportsSetVariable = false;
@@ -529,7 +540,7 @@ export class DebugProtocolAdapter implements vscode.DebugAdapter {
     response.body.supportsCompletionsRequest = false;
 
     // This default debug adapter does not support the 'restart' request.
-    response.body.supportsRestartRequest = false;
+    response.body.supportsRestartRequest = true;
 
     // This default debug adapter does not support the 'exceptionOptions' attribute on the 'setExceptionBreakpoints' request.
     response.body.supportsExceptionOptions = false;
@@ -544,10 +555,10 @@ export class DebugProtocolAdapter implements vscode.DebugAdapter {
     response.body.supportTerminateDebuggee = false;
 
     // This debug adapter does not support delayed loading of stack frames.
-    response.body.supportsDelayedStackTraceLoading = false;
+    response.body.supportsDelayedStackTraceLoading = true;
 
     // This debug adapter does not support the 'loadedSources' request.
-    response.body.supportsLoadedSourcesRequest = false;
+    response.body.supportsLoadedSourcesRequest = true;
 
     // This debug adapter does not support the 'logMessage' attribute of the SourceBreakpoint.
     response.body.supportsLogPoints = false;
@@ -588,11 +599,13 @@ export class DebugProtocolAdapter implements vscode.DebugAdapter {
     /** The debug adapter does not support 'filterOptions' on the 'setExceptionBreakpoints' request. */
     response.body.supportsExceptionFilterOptions = false;
 
-    this.sendEvent({ "seq": 0, "type": "event", "event": "initialized" });
     this.sendResponse(response);
+    this.sendEvent({ "seq": 0, "type": "event", "event": "initialized" });
+    // this.sendEvent(new InitializedEvent());
   }
 
   private dispatchRequest(request: DebugProtocol.Request): void {
+    console.info(`${request.type}: ${request.command} ${request.seq}`);
     const response = new Response(request);
     if (request.command === 'initialize') {
       var args = <DebugProtocol.InitializeRequestArguments>request.arguments;
