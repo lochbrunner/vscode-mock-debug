@@ -5,11 +5,6 @@
 // import { logger } from '@vscode/debugadapter';
 import { EventEmitter } from './orig/eventEmitter';
 
-export interface FileAccessor {
-	isWindows: boolean;
-	readFile(path: string): Promise<Uint8Array>;
-	writeFile(path: string, contents: Uint8Array): Promise<void>;
-}
 
 export interface IRuntimeBreakpoint {
 	id: number;
@@ -126,25 +121,15 @@ export class MockRuntime extends EventEmitter {
 		return this._sourceFile;
 	}
 
-	// private variables = new Map<string, RuntimeVariable>();
-
 	// the contents (= lines) of the one and only file
 	private sourceLines: string[] = [];
 	private instructions: Word[] = [];
-	// private starts: number[] = [];
-	// private ends: number[] = [];
 
 	// This is the next line that will be 'executed'
 	// private _currentLine = 0;
 	private get currentLine() {
-		// return this._currentLine;
 		return this.assignments[this.caret].linenumber;
 	}
-	// private set currentLine(x) {
-	// 	this._currentLine = x;
-	// 	this.instruction = this.starts[x];
-	// }
-	// private currentColumn: number | undefined;
 
 	// This is the next instruction that will be 'executed'
 	public instruction = 0;
@@ -160,9 +145,6 @@ export class MockRuntime extends EventEmitter {
 	private breakpointId = 1;
 
 	private breakAddresses = new Map<string, string>();
-
-	// private namedException: string | undefined;
-	// private otherExceptions = false;
 
 	private assignments: Assignment[];
 	private caret: number;
@@ -190,17 +172,8 @@ export class MockRuntime extends EventEmitter {
 	public async start(program: string, stopOnEntry: boolean, debug: boolean): Promise<void> {
 		console.info(`start ${program} ${stopOnEntry} ${debug}`);
 
-		// await this.loadSource(this.normalizePathAndCasing(program));
-
 		if (debug) {
-			// await this.verifyBreakpoints(this._sourceFile);
 
-			// if (stopOnEntry) {
-			// 	this.findNextStatement(false, 'stopOnEntry');
-			// } else {
-			// 	// we just start to run until we hit a breakpoint, an exception, or the end of the program
-			// 	this.continue(false);
-			// }
 			this.caret = 0;
 			this.sendEvent('stopOnEntry');
 		} else {
@@ -214,14 +187,6 @@ export class MockRuntime extends EventEmitter {
 	public continue(reverse: boolean) {
 		console.info(`continue ${reverse}`);
 
-		// while (!this.executeLine(this.currentLine, reverse)) {
-		// 	if (this.updateCurrentLine(reverse)) {
-		// 		break;
-		// 	}
-		// 	if (this.findNextStatement(reverse)) {
-		// 		break;
-		// 	}
-		// }
 		this.caret = (this.caret + 1) % this.assignments.length;
 		this.sendEvent('stopOnBreakpoint');
 	}
@@ -237,45 +202,7 @@ export class MockRuntime extends EventEmitter {
 			this.caret = (this.caret - 1 + this.assignments.length) % this.assignments.length;
 		}
 		this.sendEvent('stopOnStep');
-		// if (instruction) {
-		// 	if (reverse) {
-		// 		this.instruction--;
-		// 	} else {
-		// 		this.instruction++;
-		// 	}
-		// 	this.sendEvent('stopOnStep');
-		// } else {
-		// 	if (!this.executeLine(this.currentLine, reverse)) {
-		// 		if (!this.updateCurrentLine(reverse)) {
-		// 			this.findNextStatement(reverse, 'stopOnStep');
-		// 		}
-		// 	}
-		// }
 	}
-
-	// private updateCurrentLine(reverse: boolean): boolean {
-	// 	if (reverse) {
-	// 		if (this.currentLine > 0) {
-	// 			this.currentLine--;
-	// 		} else {
-	// 			// no more lines: stop at first line
-	// 			this.currentLine = 0;
-	// 			this.currentColumn = undefined;
-	// 			this.sendEvent('stopOnEntry');
-	// 			return true;
-	// 		}
-	// 	} else {
-	// 		if (this.currentLine < this.sourceLines.length - 1) {
-	// 			this.currentLine++;
-	// 		} else {
-	// 			// no more lines: run to end
-	// 			this.currentColumn = undefined;
-	// 			this.sendEvent('end');
-	// 			return true;
-	// 		}
-	// 	}
-	// 	return false;
-	// }
 
 	/**
 	 * "Step into" for Mock debug means: go to next character
@@ -283,19 +210,6 @@ export class MockRuntime extends EventEmitter {
 	public stepIn(targetId: number | undefined) {
 		console.info(`stepIn ${targetId}`);
 		this.step(false, false);
-		// if (typeof targetId === 'number') {
-		// 	this.currentColumn = targetId;
-		// 	this.sendEvent('stopOnStep');
-		// } else {
-		// 	if (typeof this.currentColumn === 'number') {
-		// 		if (this.currentColumn <= this.sourceLines[this.currentLine].length) {
-		// 			this.currentColumn += 1;
-		// 		}
-		// 	} else {
-		// 		this.currentColumn = 1;
-		// 	}
-		// 	this.sendEvent('stopOnStep');
-		// }
 	}
 
 	/**
@@ -304,13 +218,6 @@ export class MockRuntime extends EventEmitter {
 	public stepOut() {
 		console.info('stepOut');
 		this.step(false, false);
-		// if (typeof this.currentColumn === 'number') {
-		// 	this.currentColumn -= 1;
-		// 	if (this.currentColumn === 0) {
-		// 		this.currentColumn = undefined;
-		// 	}
-		// }
-		// this.sendEvent('stopOnStep');
 	}
 
 	public getStepInTargets(frameId: number): IRuntimeStepInTargets[] {
@@ -343,36 +250,6 @@ export class MockRuntime extends EventEmitter {
 		const alignment = this.assignments[this.caret];
 		return { count: 0, frames: [{ index: 0, name: 'frame_name', file: alignment.filename, line: alignment.linenumber }] };
 
-
-		// const line = this.getLine();
-		// const words = this.getWords(this.currentLine, line);
-		// words.push({ name: 'BOTTOM', line: -1, index: -1 });	// add a sentinel so that the stack is never empty...
-
-		// // if the line contains the word 'disassembly' we support to "disassemble" the line by adding an 'instruction' property to the stackframe
-		// const instruction = line.indexOf('disassembly') >= 0 ? this.instruction : undefined;
-
-		// const column = typeof this.currentColumn === 'number' ? this.currentColumn : undefined;
-
-		// const frames: IRuntimeStackFrame[] = [];
-		// // every word of the current line becomes a stack frame.
-		// for (let i = startFrame; i < Math.min(endFrame, words.length); i++) {
-
-		// 	const stackFrame: IRuntimeStackFrame = {
-		// 		index: i,
-		// 		name: `${words[i].name}(${i})`,	// use a word of the line as the stackframe name
-		// 		file: this._sourceFile,
-		// 		line: this.currentLine,
-		// 		column: column, // words[i].index
-		// 		instruction: instruction ? instruction + i : 0
-		// 	};
-
-		// 	frames.push(stackFrame);
-		// }
-
-		// return {
-		// 	frames: frames,
-		// 	count: words.length
-		// };
 		return {
 			frames: [],
 			count: 0
@@ -385,7 +262,6 @@ export class MockRuntime extends EventEmitter {
 	 */
 	public getBreakpoints(path: string, line: number): number[] {
 		console.info(`getBreakpoints ${path} ${line}`);
-		// return this.getWords(line, this.getLine(line)).filter(w => w.name.length > 8).map(w => w.index);
 		return [];
 	}
 
@@ -394,19 +270,6 @@ export class MockRuntime extends EventEmitter {
 	 */
 	public async setBreakPoint(path: string, line: number): Promise<IRuntimeBreakpoint> {
 		console.info(`setBreakPoint ${path} ${line}`);
-		// path = this.normalizePathAndCasing(path);
-
-		// const bp: IRuntimeBreakpoint = { verified: false, line, id: this.breakpointId++ };
-		// let bps = this.breakPoints.get(path);
-		// if (!bps) {
-		// 	bps = new Array<IRuntimeBreakpoint>();
-		// 	this.breakPoints.set(path, bps);
-		// }
-		// bps.push(bp);
-
-		// await this.verifyBreakpoints(path);
-
-		// return bp;
 		return { verified: false, line, id: this.breakpointId++ };
 	}
 
@@ -415,36 +278,15 @@ export class MockRuntime extends EventEmitter {
 	 */
 	public clearBreakPoint(path: string, line: number): IRuntimeBreakpoint | undefined {
 		console.info(`clearBreakPoint ${path} ${line}`);
-		// const bps = this.breakPoints.get(this.normalizePathAndCasing(path));
-		// if (bps) {
-		// 	const index = bps.findIndex(bp => bp.line === line);
-		// 	if (index >= 0) {
-		// 		const bp = bps[index];
-		// 		bps.splice(index, 1);
-		// 		return bp;
-		// 	}
-		// }
 		return undefined;
 	}
 
 	public clearBreakpoints(path: string): void {
 		console.info(`clearBreakpoints ${path}`);
-		// this.breakPoints.delete(this.normalizePathAndCasing(path));
 	}
 
 	public setDataBreakpoint(address: string, accessType: 'read' | 'write' | 'readWrite'): boolean {
 		console.info(`setDataBreakpoint ${address} ${accessType}`);
-
-		// const x = accessType === 'readWrite' ? 'read write' : accessType;
-
-		// const t = this.breakAddresses.get(address);
-		// if (t) {
-		// 	if (t !== x) {
-		// 		this.breakAddresses.set(address, 'read write');
-		// 	}
-		// } else {
-		// 	this.breakAddresses.set(address, x);
-		// }
 		return true;
 	}
 
@@ -484,7 +326,7 @@ export class MockRuntime extends EventEmitter {
 	public getLocalVariables(): RuntimeVariable[] {
 		// console.info('getLocalVariables');
 		// return Array.from(this.variables, ([name, value]) => value);
-		return [new RuntimeVariable('local_1', 1), new RuntimeVariable('local_2', 2)];
+		return [new RuntimeVariable('local_1', 1), new RuntimeVariable('local_4', 2)];
 	}
 
 	public getLocalVariable(name: string): RuntimeVariable | undefined {
@@ -545,11 +387,4 @@ export class MockRuntime extends EventEmitter {
 		}, 0);
 	}
 
-	// private normalizePathAndCasing(path: string) {
-	// 	if (this.fileAccessor.isWindows) {
-	// 		return path.replace(/\//g, '\\').toLowerCase();
-	// 	} else {
-	// 		return path.replace(/\\/g, '/');
-	// 	}
-	// }
 }

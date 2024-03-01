@@ -6,7 +6,6 @@
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { ProtocolServer } from './protocol';
 import { Response, Event } from './messages';
-import { runDebugAdapter } from './runDebugAdapter';
 import { URL } from 'url';
 
 
@@ -17,7 +16,7 @@ export class Source implements DebugProtocol.Source {
 
 	public constructor(name: string, path?: string, id: number = 0, origin?: string, data?: any) {
 		this.name = name;
-		this.path = path;
+		this.path = path || '';
 		this.sourceReference = id;
 		if (origin) {
 			(<any>this).origin = origin;
@@ -113,7 +112,7 @@ export class Breakpoint implements DebugProtocol.Breakpoint {
 
 	public setId(id: number) {
 		(this as DebugProtocol.Breakpoint).id = id;
- 	}
+	}
 }
 
 export class Module implements DebugProtocol.Module {
@@ -438,13 +437,6 @@ export class DebugSession extends ProtocolServer {
 		this._isServer = enable;
 	}
 
-	/**
-	 * A virtual constructor...
-	 */
-	public static run(debugSession: typeof DebugSession) {
-		runDebugAdapter(debugSession);
-	}
-
 	public shutdown(): void {
 		if (this._isServer || this._isRunningInline()) {
 			// shutdown ignored in server mode
@@ -458,10 +450,10 @@ export class DebugSession extends ProtocolServer {
 
 	protected sendErrorResponse(response: DebugProtocol.Response, codeOrMessage: number | DebugProtocol.Message, format?: string, variables?: any, dest: ErrorDestination = ErrorDestination.User): void {
 
-		let msg : DebugProtocol.Message;
+		let msg: DebugProtocol.Message;
 		if (typeof codeOrMessage === 'number') {
-			msg = <DebugProtocol.Message> {
-				id: <number> codeOrMessage,
+			msg = <DebugProtocol.Message>{
+				id: <number>codeOrMessage,
 				format: format
 			};
 			if (variables) {
@@ -480,7 +472,7 @@ export class DebugSession extends ProtocolServer {
 		response.success = false;
 		response.message = DebugSession.formatPII(msg.format, true, msg.variables);
 		if (!response.body) {
-			response.body = { };
+			response.body = {};
 		}
 		response.body.error = msg;
 
@@ -497,7 +489,7 @@ export class DebugSession extends ProtocolServer {
 
 		try {
 			if (request.command === 'initialize') {
-				var args = <DebugProtocol.InitializeRequestArguments> request.arguments;
+				var args = <DebugProtocol.InitializeRequestArguments>request.arguments;
 
 				if (typeof args.linesStartAt1 === 'boolean') {
 					this._clientLinesStartAt1 = args.linesStartAt1;
@@ -509,133 +501,133 @@ export class DebugSession extends ProtocolServer {
 				if (args.pathFormat !== 'path') {
 					this.sendErrorResponse(response, 2018, 'debug adapter only supports native paths', null, ErrorDestination.Telemetry);
 				} else {
-					const initializeResponse = <DebugProtocol.InitializeResponse> response;
+					const initializeResponse = <DebugProtocol.InitializeResponse>response;
 					initializeResponse.body = {};
 					this.initializeRequest(initializeResponse, args);
 				}
 
 			} else if (request.command === 'launch') {
-				this.launchRequest(<DebugProtocol.LaunchResponse> response, request.arguments, request);
+				this.launchRequest(<DebugProtocol.LaunchResponse>response, request.arguments, request);
 
 			} else if (request.command === 'attach') {
-				this.attachRequest(<DebugProtocol.AttachResponse> response, request.arguments, request);
+				this.attachRequest(<DebugProtocol.AttachResponse>response, request.arguments, request);
 
 			} else if (request.command === 'disconnect') {
-				this.disconnectRequest(<DebugProtocol.DisconnectResponse> response, request.arguments, request);
+				this.disconnectRequest(<DebugProtocol.DisconnectResponse>response, request.arguments, request);
 
 			} else if (request.command === 'terminate') {
-				this.terminateRequest(<DebugProtocol.TerminateResponse> response, request.arguments, request);
+				this.terminateRequest(<DebugProtocol.TerminateResponse>response, request.arguments, request);
 
 			} else if (request.command === 'restart') {
-				this.restartRequest(<DebugProtocol.RestartResponse> response, request.arguments, request);
+				this.restartRequest(<DebugProtocol.RestartResponse>response, request.arguments, request);
 
 			} else if (request.command === 'setBreakpoints') {
-				this.setBreakPointsRequest(<DebugProtocol.SetBreakpointsResponse> response, request.arguments, request);
+				this.setBreakPointsRequest(<DebugProtocol.SetBreakpointsResponse>response, request.arguments, request);
 
 			} else if (request.command === 'setFunctionBreakpoints') {
-				this.setFunctionBreakPointsRequest(<DebugProtocol.SetFunctionBreakpointsResponse> response, request.arguments, request);
+				this.setFunctionBreakPointsRequest(<DebugProtocol.SetFunctionBreakpointsResponse>response, request.arguments, request);
 
 			} else if (request.command === 'setExceptionBreakpoints') {
-				this.setExceptionBreakPointsRequest(<DebugProtocol.SetExceptionBreakpointsResponse> response, request.arguments, request);
+				this.setExceptionBreakPointsRequest(<DebugProtocol.SetExceptionBreakpointsResponse>response, request.arguments, request);
 
 			} else if (request.command === 'configurationDone') {
-				this.configurationDoneRequest(<DebugProtocol.ConfigurationDoneResponse> response, request.arguments, request);
+				this.configurationDoneRequest(<DebugProtocol.ConfigurationDoneResponse>response, request.arguments, request);
 
 			} else if (request.command === 'continue') {
-				this.continueRequest(<DebugProtocol.ContinueResponse> response, request.arguments, request);
+				this.continueRequest(<DebugProtocol.ContinueResponse>response, request.arguments, request);
 
 			} else if (request.command === 'next') {
-				this.nextRequest(<DebugProtocol.NextResponse> response, request.arguments, request);
+				this.nextRequest(<DebugProtocol.NextResponse>response, request.arguments, request);
 
 			} else if (request.command === 'stepIn') {
-				this.stepInRequest(<DebugProtocol.StepInResponse> response, request.arguments, request);
+				this.stepInRequest(<DebugProtocol.StepInResponse>response, request.arguments, request);
 
 			} else if (request.command === 'stepOut') {
-				this.stepOutRequest(<DebugProtocol.StepOutResponse> response, request.arguments, request);
+				this.stepOutRequest(<DebugProtocol.StepOutResponse>response, request.arguments, request);
 
 			} else if (request.command === 'stepBack') {
-				this.stepBackRequest(<DebugProtocol.StepBackResponse> response, request.arguments, request);
+				this.stepBackRequest(<DebugProtocol.StepBackResponse>response, request.arguments, request);
 
 			} else if (request.command === 'reverseContinue') {
-				this.reverseContinueRequest(<DebugProtocol.ReverseContinueResponse> response, request.arguments, request);
+				this.reverseContinueRequest(<DebugProtocol.ReverseContinueResponse>response, request.arguments, request);
 
 			} else if (request.command === 'restartFrame') {
-				this.restartFrameRequest(<DebugProtocol.RestartFrameResponse> response, request.arguments, request);
+				this.restartFrameRequest(<DebugProtocol.RestartFrameResponse>response, request.arguments, request);
 
 			} else if (request.command === 'goto') {
-				this.gotoRequest(<DebugProtocol.GotoResponse> response, request.arguments, request);
+				this.gotoRequest(<DebugProtocol.GotoResponse>response, request.arguments, request);
 
 			} else if (request.command === 'pause') {
-				this.pauseRequest(<DebugProtocol.PauseResponse> response, request.arguments, request);
+				this.pauseRequest(<DebugProtocol.PauseResponse>response, request.arguments, request);
 
 			} else if (request.command === 'stackTrace') {
-				this.stackTraceRequest(<DebugProtocol.StackTraceResponse> response, request.arguments, request);
+				this.stackTraceRequest(<DebugProtocol.StackTraceResponse>response, request.arguments, request);
 
 			} else if (request.command === 'scopes') {
-				this.scopesRequest(<DebugProtocol.ScopesResponse> response, request.arguments, request);
+				this.scopesRequest(<DebugProtocol.ScopesResponse>response, request.arguments, request);
 
 			} else if (request.command === 'variables') {
-				this.variablesRequest(<DebugProtocol.VariablesResponse> response, request.arguments, request);
+				this.variablesRequest(<DebugProtocol.VariablesResponse>response, request.arguments, request);
 
 			} else if (request.command === 'setVariable') {
-				this.setVariableRequest(<DebugProtocol.SetVariableResponse> response, request.arguments, request);
+				this.setVariableRequest(<DebugProtocol.SetVariableResponse>response, request.arguments, request);
 
 			} else if (request.command === 'setExpression') {
-				this.setExpressionRequest(<DebugProtocol.SetExpressionResponse> response, request.arguments, request);
+				this.setExpressionRequest(<DebugProtocol.SetExpressionResponse>response, request.arguments, request);
 
 			} else if (request.command === 'source') {
-				this.sourceRequest(<DebugProtocol.SourceResponse> response, request.arguments, request);
+				this.sourceRequest(<DebugProtocol.SourceResponse>response, request.arguments, request);
 
 			} else if (request.command === 'threads') {
-				this.threadsRequest(<DebugProtocol.ThreadsResponse> response, request);
+				this.threadsRequest(<DebugProtocol.ThreadsResponse>response, request);
 
 			} else if (request.command === 'terminateThreads') {
-				this.terminateThreadsRequest(<DebugProtocol.TerminateThreadsResponse> response, request.arguments, request);
+				this.terminateThreadsRequest(<DebugProtocol.TerminateThreadsResponse>response, request.arguments, request);
 
 			} else if (request.command === 'evaluate') {
-				this.evaluateRequest(<DebugProtocol.EvaluateResponse> response, request.arguments, request);
+				this.evaluateRequest(<DebugProtocol.EvaluateResponse>response, request.arguments, request);
 
 			} else if (request.command === 'stepInTargets') {
-				this.stepInTargetsRequest(<DebugProtocol.StepInTargetsResponse> response, request.arguments, request);
+				this.stepInTargetsRequest(<DebugProtocol.StepInTargetsResponse>response, request.arguments, request);
 
 			} else if (request.command === 'gotoTargets') {
-				this.gotoTargetsRequest(<DebugProtocol.GotoTargetsResponse> response, request.arguments, request);
+				this.gotoTargetsRequest(<DebugProtocol.GotoTargetsResponse>response, request.arguments, request);
 
 			} else if (request.command === 'completions') {
-				this.completionsRequest(<DebugProtocol.CompletionsResponse> response, request.arguments, request);
+				this.completionsRequest(<DebugProtocol.CompletionsResponse>response, request.arguments, request);
 
 			} else if (request.command === 'exceptionInfo') {
-				this.exceptionInfoRequest(<DebugProtocol.ExceptionInfoResponse> response, request.arguments, request);
+				this.exceptionInfoRequest(<DebugProtocol.ExceptionInfoResponse>response, request.arguments, request);
 
 			} else if (request.command === 'loadedSources') {
-				this.loadedSourcesRequest(<DebugProtocol.LoadedSourcesResponse> response, request.arguments, request);
+				this.loadedSourcesRequest(<DebugProtocol.LoadedSourcesResponse>response, request.arguments, request);
 
 			} else if (request.command === 'dataBreakpointInfo') {
-				this.dataBreakpointInfoRequest(<DebugProtocol.DataBreakpointInfoResponse> response, request.arguments, request);
+				this.dataBreakpointInfoRequest(<DebugProtocol.DataBreakpointInfoResponse>response, request.arguments, request);
 
 			} else if (request.command === 'setDataBreakpoints') {
-				this.setDataBreakpointsRequest(<DebugProtocol.SetDataBreakpointsResponse> response, request.arguments, request);
+				this.setDataBreakpointsRequest(<DebugProtocol.SetDataBreakpointsResponse>response, request.arguments, request);
 
 			} else if (request.command === 'readMemory') {
-				this.readMemoryRequest(<DebugProtocol.ReadMemoryResponse> response, request.arguments, request);
+				this.readMemoryRequest(<DebugProtocol.ReadMemoryResponse>response, request.arguments, request);
 
 			} else if (request.command === 'writeMemory') {
-				this.writeMemoryRequest(<DebugProtocol.WriteMemoryResponse> response, request.arguments, request);
+				this.writeMemoryRequest(<DebugProtocol.WriteMemoryResponse>response, request.arguments, request);
 
 			} else if (request.command === 'disassemble') {
-				this.disassembleRequest(<DebugProtocol.DisassembleResponse> response, request.arguments, request);
+				this.disassembleRequest(<DebugProtocol.DisassembleResponse>response, request.arguments, request);
 
 			} else if (request.command === 'cancel') {
-				this.cancelRequest(<DebugProtocol.CancelResponse> response, request.arguments, request);
+				this.cancelRequest(<DebugProtocol.CancelResponse>response, request.arguments, request);
 
 			} else if (request.command === 'breakpointLocations') {
-				this.breakpointLocationsRequest(<DebugProtocol.BreakpointLocationsResponse> response, request.arguments, request);
+				this.breakpointLocationsRequest(<DebugProtocol.BreakpointLocationsResponse>response, request.arguments, request);
 
 			} else if (request.command === 'setInstructionBreakpoints') {
-				this.setInstructionBreakpointsRequest(<DebugProtocol.SetInstructionBreakpointsResponse> response, request.arguments, request);
+				this.setInstructionBreakpointsRequest(<DebugProtocol.SetInstructionBreakpointsResponse>response, request.arguments, request);
 
 			} else {
-				this.customRequest(request.command, <DebugProtocol.Response> response, request.arguments, request);
+				this.customRequest(request.command, <DebugProtocol.Response>response, request.arguments, request);
 			}
 		} catch (e) {
 			this.sendErrorResponse(response, 1104, '{_stack}', { _exception: e.message, _stack: e.stack }, ErrorDestination.Telemetry);
@@ -777,43 +769,43 @@ export class DebugSession extends ProtocolServer {
 		this.sendResponse(response);
 	}
 
-	protected continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments, request?: DebugProtocol.Request) : void {
+	protected continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments, request?: DebugProtocol.Request): void {
 		this.sendResponse(response);
 	}
 
-	protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments, request?: DebugProtocol.Request) : void {
+	protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments, request?: DebugProtocol.Request): void {
 		this.sendResponse(response);
 	}
 
-	protected stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments, request?: DebugProtocol.Request) : void {
+	protected stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments, request?: DebugProtocol.Request): void {
 		this.sendResponse(response);
 	}
 
-	protected stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments, request?: DebugProtocol.Request) : void {
+	protected stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments, request?: DebugProtocol.Request): void {
 		this.sendResponse(response);
 	}
 
-	protected stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments, request?: DebugProtocol.Request) : void {
+	protected stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments, request?: DebugProtocol.Request): void {
 		this.sendResponse(response);
 	}
 
-	protected reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments, request?: DebugProtocol.Request) : void {
+	protected reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments, request?: DebugProtocol.Request): void {
 		this.sendResponse(response);
 	}
 
-	protected restartFrameRequest(response: DebugProtocol.RestartFrameResponse, args: DebugProtocol.RestartFrameArguments, request?: DebugProtocol.Request) : void {
+	protected restartFrameRequest(response: DebugProtocol.RestartFrameResponse, args: DebugProtocol.RestartFrameArguments, request?: DebugProtocol.Request): void {
 		this.sendResponse(response);
 	}
 
-	protected gotoRequest(response: DebugProtocol.GotoResponse, args: DebugProtocol.GotoArguments, request?: DebugProtocol.Request) : void {
+	protected gotoRequest(response: DebugProtocol.GotoResponse, args: DebugProtocol.GotoArguments, request?: DebugProtocol.Request): void {
 		this.sendResponse(response);
 	}
 
-	protected pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments, request?: DebugProtocol.Request) : void {
+	protected pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments, request?: DebugProtocol.Request): void {
 		this.sendResponse(response);
 	}
 
-	protected sourceRequest(response: DebugProtocol.SourceResponse, args: DebugProtocol.SourceArguments, request?: DebugProtocol.Request) : void {
+	protected sourceRequest(response: DebugProtocol.SourceResponse, args: DebugProtocol.SourceArguments, request?: DebugProtocol.Request): void {
 		this.sendResponse(response);
 	}
 
@@ -995,8 +987,8 @@ export class DebugSession extends ProtocolServer {
 	/*
 	* If argument starts with '_' it is OK to send its value to telemetry.
 	*/
-	private static formatPII(format:string, excludePII: boolean, args: {[key: string]: string}): string {
-		return format.replace(DebugSession._formatPIIRegexp, function(match, paramName) {
+	private static formatPII(format: string, excludePII: boolean, args: { [key: string]: string }): string {
+		return format.replace(DebugSession._formatPIIRegexp, function (match, paramName) {
 			if (excludePII && paramName.length > 0 && paramName[0] !== '_') {
 				return match;
 			}
