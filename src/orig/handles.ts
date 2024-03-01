@@ -4,18 +4,18 @@
  *--------------------------------------------------------------------------------------------*/
 
 export class Handles<T> {
+	private startHandle = 1000;
 
-	private START_HANDLE = 1000;
 
-	private _nextHandle : number;
+	private _nextHandle: number;
 	private _handleMap = new Map<number, T>();
 
 	public constructor(startHandle?: number) {
-		this._nextHandle = typeof startHandle === 'number' ? startHandle : this.START_HANDLE;
+		this._nextHandle = typeof startHandle === 'number' ? startHandle : this.startHandle;
 	}
 
 	public reset(): void {
-		this._nextHandle = this.START_HANDLE;
+		this._nextHandle = this.startHandle;
 		this._handleMap = new Map<number, T>();
 	}
 
@@ -25,7 +25,7 @@ export class Handles<T> {
 		return handle;
 	}
 
-	public get(handle: number, dflt?: T): T {
-		return this._handleMap.get(handle) || dflt;
+	public get(handle: number, defaultValue?: T): T | undefined {
+		return this._handleMap.get(handle) || defaultValue;
 	}
 }

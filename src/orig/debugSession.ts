@@ -383,8 +383,8 @@ export class MemoryEvent extends Event implements DebugProtocol.MemoryEvent {
 }
 
 export enum ErrorDestination {
-	User = 1,
-	Telemetry = 2
+	user = 1,
+	telemetry = 2
 };
 
 export class DebugSession extends ProtocolServer {
@@ -397,12 +397,10 @@ export class DebugSession extends ProtocolServer {
 	private _clientColumnsStartAt1: boolean;
 	private _clientPathsAreURIs: boolean;
 
-	protected _isServer: boolean;
-
-	public constructor(obsolete_debuggerLinesAndColumnsStartAt1?: boolean, obsolete_isServer?: boolean) {
+	public constructor(obsoleteDebuggerLinesAndColumnsStartAt1?: boolean) {
 		super();
 
-		const linesAndColumnsStartAt1 = typeof obsolete_debuggerLinesAndColumnsStartAt1 === 'boolean' ? obsolete_debuggerLinesAndColumnsStartAt1 : false;
+		const linesAndColumnsStartAt1 = typeof obsoleteDebuggerLinesAndColumnsStartAt1 === 'boolean' ? obsoleteDebuggerLinesAndColumnsStartAt1 : false;
 		this._debuggerLinesStartAt1 = linesAndColumnsStartAt1;
 		this._debuggerColumnsStartAt1 = linesAndColumnsStartAt1;
 		this._debuggerPathsAreURIs = false;
@@ -410,8 +408,6 @@ export class DebugSession extends ProtocolServer {
 		this._clientLinesStartAt1 = true;
 		this._clientColumnsStartAt1 = true;
 		this._clientPathsAreURIs = false;
-
-		this._isServer = typeof obsolete_isServer === 'boolean' ? obsolete_isServer : false;
 
 		this.on('close', () => {
 			this.shutdown();
@@ -433,22 +429,11 @@ export class DebugSession extends ProtocolServer {
 		this._debuggerColumnsStartAt1 = enable;
 	}
 
-	public setRunAsServer(enable: boolean) {
-		this._isServer = enable;
-	}
-
 	public shutdown(): void {
-		if (this._isServer || this._isRunningInline()) {
-			// shutdown ignored in server mode
-		} else {
-			// wait a bit before shutting down
-			setTimeout(() => {
-				process.exit(0);
-			}, 100);
-		}
+		// shutdown ignored in server mode
 	}
 
-	protected sendErrorResponse(response: DebugProtocol.Response, codeOrMessage: number | DebugProtocol.Message, format?: string, variables?: any, dest: ErrorDestination = ErrorDestination.User): void {
+	protected sendErrorResponse(response: DebugProtocol.Response, codeOrMessage: number | DebugProtocol.Message, format?: string, variables?: any, dest: ErrorDestination = ErrorDestination.user): void {
 
 		let msg: DebugProtocol.Message;
 		if (typeof codeOrMessage === 'number') {
@@ -459,10 +444,10 @@ export class DebugSession extends ProtocolServer {
 			if (variables) {
 				msg.variables = variables;
 			}
-			if (dest & ErrorDestination.User) {
+			if (dest & ErrorDestination.user) {
 				msg.showUser = true;
 			}
-			if (dest & ErrorDestination.Telemetry) {
+			if (dest & ErrorDestination.telemetry) {
 				msg.sendTelemetry = true;
 			}
 		} else {
@@ -470,17 +455,13 @@ export class DebugSession extends ProtocolServer {
 		}
 
 		response.success = false;
-		response.message = DebugSession.formatPII(msg.format, true, msg.variables);
+		response.message = DebugSession.formatPII(msg.format, true, msg.variables || {});
 		if (!response.body) {
 			response.body = {};
 		}
 		response.body.error = msg;
 
 		this.sendResponse(response);
-	}
-
-	public runInTerminalRequest(args: DebugProtocol.RunInTerminalRequestArguments, timeout: number, cb: (response: DebugProtocol.RunInTerminalResponse) => void) {
-		this.sendRequest('runInTerminal', args, timeout, cb as (r: DebugProtocol.Response) => void);
 	}
 
 	protected dispatchRequest(request: DebugProtocol.Request): void {
@@ -499,7 +480,7 @@ export class DebugSession extends ProtocolServer {
 				}
 
 				if (args.pathFormat !== 'path') {
-					this.sendErrorResponse(response, 2018, 'debug adapter only supports native paths', null, ErrorDestination.Telemetry);
+					this.sendErrorResponse(response, 2018, 'debug adapter only supports native paths', null, ErrorDestination.telemetry);
 				} else {
 					const initializeResponse = <DebugProtocol.InitializeResponse>response;
 					initializeResponse.body = {};
@@ -629,12 +610,16 @@ export class DebugSession extends ProtocolServer {
 			} else {
 				this.customRequest(request.command, <DebugProtocol.Response>response, request.arguments, request);
 			}
-		} catch (e) {
-			this.sendErrorResponse(response, 1104, '{_stack}', { _exception: e.message, _stack: e.stack }, ErrorDestination.Telemetry);
+		} catch (_e) {
+			const e: Error = _e as Error;
+			this.sendErrorResponse(response, 1104, '{_stack}', { _exception: e.message, _stack: e.stack }, ErrorDestination.telemetry);
 		}
 	}
 
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
+		if (response.body === undefined) {
+			return;
+		}
 
 		// This default debug adapter does not support conditional breakpoints.
 		response.body.supportsConditionalBreakpoints = false;
@@ -897,7 +882,7 @@ export class DebugSession extends ProtocolServer {
 	 * Override this hook to implement custom requests.
 	 */
 	protected customRequest(command: string, response: DebugProtocol.Response, args: any, request?: DebugProtocol.Request): void {
-		this.sendErrorResponse(response, 1014, 'unrecognized request', null, ErrorDestination.Telemetry);
+		this.sendErrorResponse(response, 1014, 'unrecognized request', null, ErrorDestination.telemetry);
 	}
 
 	//---- protected -------------------------------------------------------------------------------------------------
@@ -956,12 +941,6 @@ export class DebugSession extends ProtocolServer {
 
 	private static path2uri(path: string): string {
 
-		if (process.platform === 'win32') {
-			if (/^[A-Z]:/.test(path)) {
-				path = path[0].toLowerCase() + path.substr(1);
-			}
-			path = path.replace(/\\/g, '/');
-		}
 		path = encodeURI(path);
 
 		let uri = new URL(`file:`);	// ignore 'path' for now
@@ -973,12 +952,6 @@ export class DebugSession extends ProtocolServer {
 
 		let uri = new URL(sourceUri);
 		let s = decodeURIComponent(uri.pathname);
-		if (process.platform === 'win32') {
-			if (/^\/[a-zA-Z]:/.test(s)) {
-				s = s[1].toLowerCase() + s.substr(2);
-			}
-			s = s.replace(/\//g, '\\');
-		}
 		return s;
 	}
 
@@ -995,6 +968,6 @@ export class DebugSession extends ProtocolServer {
 			return args[paramName] && args.hasOwnProperty(paramName) ?
 				args[paramName] :
 				match;
-		})
+		});
 	}
 }

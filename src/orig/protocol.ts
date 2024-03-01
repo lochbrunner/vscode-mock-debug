@@ -80,14 +80,14 @@ interface VSCodeDebugAdapter extends Disposable0 {
 
 export class ProtocolServer extends EventEmitter implements VSCodeDebugAdapter {
 
-	private static TWO_CRLF = '\r\n\r\n';
+	private static twoCrlf = '\r\n\r\n';
 
 	private _sendMessage = new Emitter<DebugProtocolMessage>();
 
-	private _rawData: Buffer;
-	private _contentLength: number;
+	private _rawData: Buffer = Buffer.alloc(0);
+	private _contentLength: number = 0;
 	private _sequence: number = 1;
-	private _writableStream: NodeJS.WritableStream;
+	private _writableStream?: NodeJS.WritableStream = undefined;
 	private _pendingRequests = new Map<number, (response: DebugProtocol.Response) => void>();
 
 	constructor() {
@@ -221,24 +221,25 @@ export class ProtocolServer extends EventEmitter implements VSCodeDebugAdapter {
 							let msg: DebugProtocol.ProtocolMessage = JSON.parse(message);
 							this.handleMessage(msg);
 						}
-						catch (e) {
+						catch (_e) {
+							const e = _e as Error;
 							this._emitEvent(new Event('error', 'Error handling data: ' + (e && e.message)));
 						}
 					}
 					continue;	// there may be more complete messages to process
 				}
 			} else {
-				const idx = this._rawData.indexOf(ProtocolServer.TWO_CRLF);
+				const idx = this._rawData.indexOf(ProtocolServer.twoCrlf);
 				if (idx !== -1) {
 					const header = this._rawData.toString('utf8', 0, idx);
 					const lines = header.split('\r\n');
 					for (let i = 0; i < lines.length; i++) {
 						const pair = lines[i].split(/: +/);
-						if (pair[0] == 'Content-Length') {
+						if (pair[0] === 'Content-Length') {
 							this._contentLength = +pair[1];
 						}
 					}
-					this._rawData = this._rawData.slice(idx + ProtocolServer.TWO_CRLF.length);
+					this._rawData = this._rawData.slice(idx + ProtocolServer.twoCrlf.length);
 					continue;
 				}
 			}

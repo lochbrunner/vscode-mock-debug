@@ -12,7 +12,7 @@
 
 import {
 	StoppedEvent, BreakpointEvent, OutputEvent, ProgressStartEvent, ProgressUpdateEvent, ProgressEndEvent, InvalidatedEvent, Thread, StackFrame, Scope, Source,
-	Breakpoint, MemoryEvent, DebugSession
+	Breakpoint, MemoryEvent, DebugSession, TerminatedEvent, InitializedEvent
 } from './orig/debugSession';
 import { Handles } from './orig/handles';
 
