@@ -158,13 +158,13 @@ export class MockDebugSession extends DebugSession {
 		response.body.supportsConfigurationDoneRequest = true;
 
 		// make VS Code use 'evaluate' when hovering over source
-		response.body.supportsEvaluateForHovers = true;
+		response.body.supportsEvaluateForHovers = false;
 
 		// make VS Code show a 'step back' button
 		response.body.supportsStepBack = true;
 
 		// make VS Code support data breakpoints
-		response.body.supportsDataBreakpoints = true;
+		response.body.supportsDataBreakpoints = false;
 
 		// make VS Code support completion in REPL
 		response.body.supportsCompletionsRequest = true;
@@ -177,7 +177,7 @@ export class MockDebugSession extends DebugSession {
 		response.body.supportsBreakpointLocationsRequest = true;
 
 		// make VS Code provide "Step in Target" functionality
-		response.body.supportsStepInTargetsRequest = true;
+		response.body.supportsStepInTargetsRequest = false;
 
 		// the adapter defines two exceptions filters, one with support for conditions.
 		response.body.supportsExceptionFilterOptions = true;
@@ -200,26 +200,26 @@ export class MockDebugSession extends DebugSession {
 		];
 
 		// make VS Code send exceptionInfo request
-		response.body.supportsExceptionInfoRequest = true;
+		response.body.supportsExceptionInfoRequest = false;
 
 		// make VS Code send setVariable request
-		response.body.supportsSetVariable = true;
+		response.body.supportsSetVariable = false;
 
 		// make VS Code send setExpression request
-		response.body.supportsSetExpression = true;
+		response.body.supportsSetExpression = false;
 
 		// make VS Code send disassemble request
-		response.body.supportsDisassembleRequest = true;
-		response.body.supportsSteppingGranularity = true;
-		response.body.supportsInstructionBreakpoints = true;
+		response.body.supportsDisassembleRequest = false;
+		response.body.supportsSteppingGranularity = false;
+		response.body.supportsInstructionBreakpoints = false;
 
 		// make VS Code able to read and write variable memory
-		response.body.supportsReadMemoryRequest = true;
-		response.body.supportsWriteMemoryRequest = true;
+		response.body.supportsReadMemoryRequest = false;
+		response.body.supportsWriteMemoryRequest = false;
 
 		response.body.supportSuspendDebuggee = true;
 		response.body.supportTerminateDebuggee = true;
-		response.body.supportsFunctionBreakpoints = true;
+		response.body.supportsFunctionBreakpoints = false;
 		response.body.supportsDelayedStackTraceLoading = true;
 
 		this.sendResponse(response);

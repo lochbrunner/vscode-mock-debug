@@ -96,6 +96,7 @@ export function timeout(ms: number) {
 interface Assignment {
 	linenumber: number;
 	filename: string;
+	localVariables: RuntimeVariable[];
 }
 
 /**
@@ -153,15 +154,15 @@ export class MockRuntime extends EventEmitter {
 		super();
 		const filename = '/home/matthias/workspace/github/lochbrunner/vscode-mock-debug/sampleWorkspace/readme.md';
 		this.assignments = [
-			{ linenumber: 1, filename },
-			{ linenumber: 2, filename },
-			{ linenumber: 3, filename },
-			{ linenumber: 4, filename },
-			{ linenumber: 5, filename },
-			{ linenumber: 6, filename },
-			{ linenumber: 7, filename },
-			{ linenumber: 8, filename },
-			{ linenumber: 9, filename },
+			{ linenumber: 1, filename, localVariables: [new RuntimeVariable('local_1', 1), new RuntimeVariable('local_2', 2)] },
+			{ linenumber: 2, filename, localVariables: [new RuntimeVariable('local_1', 2), new RuntimeVariable('local_4', 4)] },
+			{ linenumber: 3, filename, localVariables: [new RuntimeVariable('local_1', 1), new RuntimeVariable('local_4', 2)] },
+			{ linenumber: 4, filename, localVariables: [new RuntimeVariable('local_1', 4), new RuntimeVariable('local_2', 2)] },
+			{ linenumber: 5, filename, localVariables: [new RuntimeVariable('local_1', 3), new RuntimeVariable('local_2', 2)] },
+			{ linenumber: 6, filename, localVariables: [new RuntimeVariable('local_1', 4), new RuntimeVariable('local_2', 2)] },
+			{ linenumber: 7, filename, localVariables: [new RuntimeVariable('local_1', 7), new RuntimeVariable('local_2', 2)] },
+			{ linenumber: 8, filename, localVariables: [new RuntimeVariable('local_1', 9), new RuntimeVariable('local_2', 2)] },
+			{ linenumber: 9, filename, localVariables: [new RuntimeVariable('local_1', 10), new RuntimeVariable('local_2', 2)] },
 		];
 		this.caret = 0;
 	}
@@ -187,8 +188,22 @@ export class MockRuntime extends EventEmitter {
 	public continue(reverse: boolean) {
 		console.info(`continue ${reverse}`);
 
-		this.caret = (this.caret + 1) % this.assignments.length;
-		this.sendEvent('stopOnBreakpoint');
+		// Do we have breakpoints?
+		if (this.breakAddresses) {
+			const assignments = reverse ? this.assignments.slice().reverse() : this.assignments;
+			for (const assignment of assignments) {
+				if (this.breakAddresses.has(assignment.filename) && this.breakAddresses.get(assignment.filename) === assignment.linenumber.toString()) {
+					this.caret = this.assignments.indexOf(assignment);
+					this.sendEvent('stopOnBreakpoint');
+					break;
+				}
+			}
+		}
+		else {
+			const delta = reverse ? -1 : 1;
+			this.caret = (this.caret + delta + this.assignments.length) % this.assignments.length;
+			this.sendEvent('stopOnBreakpoint');
+		}
 	}
 
 	/**
@@ -261,8 +276,15 @@ export class MockRuntime extends EventEmitter {
 	 * Here we return the start location of words with more than 8 characters.
 	 */
 	public getBreakpoints(path: string, line: number): number[] {
-		console.info(`getBreakpoints ${path} ${line}`);
-		return [];
+		const breakPoint = this.breakAddresses.get(path);
+		if (breakPoint === undefined || line !== parseInt(breakPoint)) {
+			console.info(`getBreakpoints ${path} ${line} (empty)`);
+			return [];
+		}
+		else {
+			console.info(`getBreakpoints ${path} ${line} (match)`);
+			return [0];
+		}
 	}
 
 	/*
@@ -270,7 +292,8 @@ export class MockRuntime extends EventEmitter {
 	 */
 	public async setBreakPoint(path: string, line: number): Promise<IRuntimeBreakpoint> {
 		console.info(`setBreakPoint ${path} ${line}`);
-		return { verified: false, line, id: this.breakpointId++ };
+		this.breakAddresses.set(path, line.toString());
+		return { verified: true, line, id: this.breakpointId++ };
 	}
 
 	/*
@@ -282,6 +305,7 @@ export class MockRuntime extends EventEmitter {
 	}
 
 	public clearBreakpoints(path: string): void {
+		this.breakAddresses.clear();
 		console.info(`clearBreakpoints ${path}`);
 	}
 
@@ -291,12 +315,10 @@ export class MockRuntime extends EventEmitter {
 	}
 
 	public clearAllDataBreakpoints(): void {
-		this.breakAddresses.clear();
+		console.info('clearAllDataBreakpoints');
 	}
 
 	public setExceptionsFilters(namedException: string | undefined, otherExceptions: boolean): void {
-		// this.namedException = namedException;
-		// this.otherExceptions = otherExceptions;
 	}
 
 	public setInstructionBreakpoint(address: number): boolean {
@@ -317,16 +339,17 @@ export class MockRuntime extends EventEmitter {
 			if (cancellationToken && cancellationToken()) {
 				break;
 			}
-			await timeout(1000);
 		}
+		await timeout(100);
 
 		return a;
 	}
 
 	public getLocalVariables(): RuntimeVariable[] {
-		// console.info('getLocalVariables');
+		console.info('getLocalVariables');
 		// return Array.from(this.variables, ([name, value]) => value);
-		return [new RuntimeVariable('local_1', 1), new RuntimeVariable('local_4', 2)];
+		// return [new RuntimeVariable('local_1', 1), new RuntimeVariable('local_4', 2)];
+		return this.assignments[this.caret].localVariables;
 	}
 
 	public getLocalVariable(name: string): RuntimeVariable | undefined {
