@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { EventEmitter } from './eventEmitter';
+import * as streams from './streams';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { Response, Event } from './messages';
 
@@ -87,7 +88,7 @@ export class ProtocolServer extends EventEmitter implements VSCodeDebugAdapter {
 	private _rawData: Buffer = Buffer.alloc(0);
 	private _contentLength: number = 0;
 	private _sequence: number = 1;
-	private _writableStream?: NodeJS.WritableStream = undefined;
+	private _writableStream?: streams.WritableStream = undefined;
 	private _pendingRequests = new Map<number, (response: DebugProtocol.Response) => void>();
 
 	constructor() {
@@ -96,8 +97,7 @@ export class ProtocolServer extends EventEmitter implements VSCodeDebugAdapter {
 
 	// ---- implements vscode.Debugadapter interface ---------------------------
 
-	public dispose(): any {
-	}
+	public dispose(): void { }
 
 	public onDidSendMessage: Event0<DebugProtocolMessage> = this._sendMessage.event;
 
@@ -120,7 +120,7 @@ export class ProtocolServer extends EventEmitter implements VSCodeDebugAdapter {
 
 	//--------------------------------------------------------------------------
 
-	public start(inStream: NodeJS.ReadableStream, outStream: NodeJS.WritableStream): void {
+	public start(inStream: streams.ReadableStream, outStream: streams.WritableStream): void {
 		this._writableStream = outStream;
 		this._rawData = Buffer.alloc(0);
 
