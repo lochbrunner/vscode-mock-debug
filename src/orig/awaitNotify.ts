@@ -37,8 +37,9 @@ export class Subject {
   }
 
   notify() {
-    if (this.waiters.length > 0) {
-      this.waiters.pop().do();
+    const waiter = this.waiters.pop();
+    if (waiter) {
+      waiter.do();
     }
   }
 }

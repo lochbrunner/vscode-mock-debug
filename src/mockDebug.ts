@@ -19,7 +19,7 @@ import { Handles } from './orig/handles';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { basename } from 'path-browserify';
 import { MockRuntime, IRuntimeBreakpoint, RuntimeVariable, timeout, IRuntimeVariableType } from './mockRuntime';
-import { Subject } from 'await-notify';
+import { Subject } from './orig/awaitNotify';
 import * as base64 from 'base64-js';
 
 /**
